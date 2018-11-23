@@ -1,0 +1,25 @@
+{
+  "name": "fugotcha",
+  "version": "0.0.0",
+  "description": "A web scraper for Dischord's Fugazi Live Series",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GinkgoFJG/fugotcha.git"
+  },
+  "author": "Frank J. Gómez <frank@pawpawworks.com>",
+  "license": "AGPL-3.0",
+  "bin": {
+    "fugotcha": "./index.js"
+  },
+  "bugs": {
+    "url": "https://github.com/GinkgoFJG/fugotcha/issues"
+  },
+  "homepage": "https://github.com/GinkgoFJG/fugotcha#readme",
+  "dependencies": {
+    "commander": "^2.19.0"
+  }
+}

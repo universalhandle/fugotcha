@@ -76,7 +76,7 @@ function extractTracks(page) {
   return page.waitForSelector(trackListSelector).then(async elementHandle => {
     return await elementHandle.$$eval(trackSelector, matches => {
       return matches.map(track => {
-        return track.innerHTML.trim();
+        return track.innerText.trim();
       });
     });
   });

@@ -30,12 +30,35 @@ program
       await page.goto(`${baseUrl}/${slug}`);
 
       const tracks = await extractTracks(page);
+      const releaseId = await extractReleaseId(page);
       console.log(tracks.join(','));
+      console.log(releaseId);
 
       await browser.close();
     });
   })
   .parse(process.argv);
+
+/**
+ * Extracts the release ID from a page.
+ *
+ * @params {Page} page
+ *   @see https://github.com/GoogleChrome/puppeteer/blob/v1.10.0/docs/api.md#class-page
+ * @return {Promise<String>}
+ *   Promise which resolves to the release ID.
+ */
+function extractReleaseId(page) {
+  const productSelector = '#productInfo';
+  const releaseSelector = '.releaseNumber';
+
+  // waiting is probably unnecessary since content appears to be rendered server-side
+  return page.waitForSelector(productSelector).then(async elementHandle => {
+    return await elementHandle.$eval(releaseSelector, match => {
+      return match.innerText.replace('Fugazi Live Series', '').trim();
+    });
+  });
+
+}
 
 /**
  * Extracts track titles from a page.

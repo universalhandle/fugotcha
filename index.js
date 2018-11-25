@@ -2,8 +2,6 @@
 
 // Config
 const baseUrl = 'https://www.dischord.com/fugazi_live_series';
-const trackListSelector = '.mp3_list';
-const trackSelector = '.track_name';
 
 // Includes
 const program = require('commander');
@@ -31,19 +29,32 @@ program
       const page = await browser.newPage();
       await page.goto(`${baseUrl}/${slug}`);
 
-      // probably unnecessary since content appears to be rendered server-side
-      await page.waitForSelector(trackListSelector);
-
-      const selector = `${trackListSelector} ${trackSelector}`;
-
-      const tracks = await page.$$eval(selector, matches => {
-        return matches.map(track => {
-          return track.innerHTML.trim();
-        });
-      });
+      const tracks = await extractTracks(page);
       console.log(tracks.join(','));
 
       await browser.close();
     });
   })
   .parse(process.argv);
+
+/**
+ * Extracts track titles from a page.
+ *
+ * @params {Page} page
+ *   @see https://github.com/GoogleChrome/puppeteer/blob/v1.10.0/docs/api.md#class-page
+ * @return {Promise<Array[String]>}
+ *   Promise which resolves to an Array of track titles.
+ */
+function extractTracks(page) {
+  const trackListSelector = '.mp3_list';
+  const trackSelector = '.track_name';
+
+  // waiting is probably unnecessary since content appears to be rendered server-side
+  return page.waitForSelector(trackListSelector).then(async elementHandle => {
+    return await elementHandle.$$eval(trackSelector, matches => {
+      return matches.map(track => {
+        return track.innerHTML.trim();
+      });
+    });
+  });
+}

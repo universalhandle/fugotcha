@@ -1,6 +1,13 @@
 #!/usr/bin/env node
 
+// Config
+const baseUrl = 'https://www.dischord.com/fugazi_live_series';
+const trackListSelector = '.mp3_list';
+const trackSelector = '.track_name';
+
+// Includes
 const program = require('commander');
+const puppeteer = require('puppeteer');
 
 program
   .on('--help', function() {
@@ -18,8 +25,25 @@ program
     }
 
     // in case the whole path is specified, just get the last bit
-    let page = program.page.replace('fugazi_live_series/', '');
+    let slug = program.page.replace('fugazi_live_series/', '');
 
-    console.log('scrape %s for %i pages', page, program.count);
+    puppeteer.launch().then(async browser => {
+      const page = await browser.newPage();
+      await page.goto(`${baseUrl}/${slug}`);
+
+      // probably unnecessary since content appears to be rendered server-side
+      await page.waitForSelector(trackListSelector);
+
+      const selector = `${trackListSelector} ${trackSelector}`;
+
+      const tracks = await page.$$eval(selector, matches => {
+        return matches.map(track => {
+          return track.innerHTML.trim();
+        });
+      });
+      console.log(tracks.join(','));
+
+      await browser.close();
+    });
   })
   .parse(process.argv);

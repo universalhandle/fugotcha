@@ -25,6 +25,8 @@ program
     // in case the whole path is specified, just get the last bit
     let slug = program.page.replace('fugazi_live_series/', '');
 
+    let pageLimit = Number(program.count);
+
     puppeteer.launch().then(async browser => {
       const page = await browser.newPage();
       await page.goto(`${baseUrl}/${slug}`);
@@ -37,7 +39,7 @@ program
         console.log(tracks.join(','));
         console.log(releaseId);
 
-        morePagesToScrape = (++i < program.count);
+        morePagesToScrape = (++i < pageLimit) || (pageLimit === 0);
 
         if (morePagesToScrape) {
           try {

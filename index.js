@@ -29,10 +29,27 @@ program
       const page = await browser.newPage();
       await page.goto(`${baseUrl}/${slug}`);
 
-      const tracks = await extractTracks(page);
-      const releaseId = await extractReleaseId(page);
-      console.log(tracks.join(','));
-      console.log(releaseId);
+      let morePagesToScrape, tracks, releaseId;
+      let i = 0;
+      do {
+        tracks = await extractTracks(page);
+        releaseId = await extractReleaseId(page);
+        console.log(tracks.join(','));
+        console.log(releaseId);
+
+        morePagesToScrape = (++i < program.count);
+
+        if (morePagesToScrape) {
+          try {
+            await page.$eval('#nextButton a', async match => {
+              match.click();
+            });
+          } catch (e) {
+            console.log('No "next" link; reached end of scrapable data.');
+            morePagesToScrape = false;
+          }
+        }
+      } while (morePagesToScrape);
 
       await browser.close();
     });
@@ -51,7 +68,6 @@ function extractReleaseId(page) {
   const productSelector = '#productInfo';
   const releaseSelector = '.releaseNumber';
 
-  // waiting is probably unnecessary since content appears to be rendered server-side
   return page.waitForSelector(productSelector).then(async elementHandle => {
     return await elementHandle.$eval(releaseSelector, match => {
       return match.innerText.replace('Fugazi Live Series', '').trim();
@@ -72,7 +88,6 @@ function extractTracks(page) {
   const trackListSelector = '.mp3_list';
   const trackSelector = '.track_name';
 
-  // waiting is probably unnecessary since content appears to be rendered server-side
   return page.waitForSelector(trackListSelector).then(async elementHandle => {
     return await elementHandle.$$eval(trackSelector, matches => {
       return matches.map(track => {

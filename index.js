@@ -54,7 +54,7 @@ program
 /**
  * Extracts the release ID from a page.
  *
- * @params {Page} page
+ * @param {Page} page
  *   @see https://github.com/GoogleChrome/puppeteer/blob/v1.10.0/docs/api.md#class-page
  * @return {Promise<String>}
  *   Promise which resolves to the release ID.
@@ -74,7 +74,7 @@ function extractReleaseId(page) {
 /**
  * Extracts track titles from a page.
  *
- * @params {Page} page
+ * @param {Page} page
  *   @see https://github.com/GoogleChrome/puppeteer/blob/v1.10.0/docs/api.md#class-page
  * @return {Promise<Array[String]>}
  *   Promise which resolves to an Array of track titles.

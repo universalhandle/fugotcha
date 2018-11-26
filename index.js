@@ -12,20 +12,13 @@ program
     console.log('');
     console.log("Fugotcha is a command-line utility for scraping data from the Fugazi Live Series on Dischord.com.");
   })
-  .option('-p --page <page>',
+  .option('-p --page <slug>',
     'Required. The slug of the page to scrape (the URL after "fugazi_live_series")')
   .option('-c --count [count]',
     'Optional. The number of pages to scrape (default: 1); 0 for infinity', 1)
   .action(function () {
-    if (typeof(program.page) === 'undefined') {
-      console.error('Page is a required parameter.');
-      process.exit(1);
-    }
-
-    // in case the whole path is specified, just get the last bit
-    let slug = program.page.replace('fugazi_live_series/', '');
-
-    let pageLimit = Number(program.count);
+    const slug = validatePage(program.page);
+    const pageLimit = validateCount(program.count);
 
     puppeteer.launch().then(async browser => {
       const page = await browser.newPage();
@@ -97,4 +90,35 @@ function extractTracks(page) {
       });
     });
   });
+}
+
+/**
+ * Returns a validated page slug or aborts the program.
+ *
+ * @param {String} value
+ * @return {String}
+ */
+function validatePage(value) {
+  if (typeof(value) === 'undefined') {
+    console.error('Page is a required parameter.');
+    process.exit(1);
+  }
+
+  // in case the whole path is specified, just get the last bit
+  return value.replace('fugazi_live_series/', '');
+}
+
+/**
+ * Returns a validated count or aborts the program.
+ *
+ * @param {String} value
+ * @return {Number}
+ */
+function validateCount(value) {
+  const limit = Number(value);
+  if (Number.isInteger(limit) && limit >= 0) {
+    return limit;
+  }
+  console.error('Count must be a non-negative integer.');
+  process.exit(1);
 }

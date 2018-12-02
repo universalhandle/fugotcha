@@ -2,6 +2,8 @@
 
 // Config
 const baseUrl = 'https://www.dischord.com/fugazi_live_series';
+const csvFieldSeparator = ',';
+const csvTextDelimiter = '"';
 
 // Includes
 const fs = require('fs');
@@ -31,9 +33,11 @@ program
       let morePagesToScrape, tracks, releaseId;
       let i = 0;
       do {
+        let releaseData = [];
+        releaseData.push(await extractReleaseId(page));
+
         tracks = await extractTracks(page);
-        releaseId = await extractReleaseId(page);
-        outputStream.write([releaseId, tracks.join(',')].join(',') + "\n");
+        outputStream.write(prepareCsvRow(releaseData.concat(tracks)));
 
         morePagesToScrape = (++i < pageLimit) || (pageLimit === 0);
 
@@ -54,6 +58,15 @@ program
     });
   })
   .parse(process.argv);
+
+/**
+ * Returns the supplied string with the CSV delimiter escaped.
+ */
+function escapeCsvTextDelimiter(string) {
+  let regex = new RegExp(csvTextDelimiter);
+  let replacement = `${csvTextDelimiter}${csvTextDelimiter}`;
+  return string.replace(regex, replacement);
+}
 
 /**
  * Extracts the release ID from a page.
@@ -118,6 +131,20 @@ function createOutputStream(filename) {
     }
     process.exit(1);
   });
+}
+
+/**
+ * Formats data for CSV.
+ *
+ * @param {Array} data
+ *   The data which is to be written to CSV.
+ * @return {String}
+ *   A string, complete with line feed, which can be inserted into a CSV file.
+ *
+ */
+function prepareCsvRow(data = []) {
+  let row = data.map(datum => csvTextDelimiter + escapeCsvTextDelimiter(datum) + csvTextDelimiter);
+  return row.join(csvFieldSeparator) + "\n";
 }
 
 /**

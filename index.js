@@ -31,7 +31,13 @@ program
 
     puppeteer.launch().then(async browser => {
       const page = await browser.newPage();
-      await page.goto(`${baseUrl}/${slug}`);
+      await page.goto(`${baseUrl}/${slug}`).then(response => {
+        const status = response.headers().status;
+        if (status !== '200') {
+          console.error(chalk.red('Request of %s failed with a status of %s.'), page.url(), status);
+          process.exit(1);
+        }
+      });
 
       /*
        * Add headings to CSV.

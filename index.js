@@ -30,11 +30,41 @@ program
       const page = await browser.newPage();
       await page.goto(`${baseUrl}/${slug}`);
 
+      /*
+       * Add headings to CSV.
+       *
+       * This is brittle, as it will need to be kept in sync with any changes
+       * made to the releaseData array below. However, CSV headings are useful,
+       * and all the CSV libraries I looked at were extremely opinionated about
+       * the CSVs having the same number of fields (to the point where fields
+       * would be dropped if they didn't match the heading), so for now:
+       */
+      outputStream.write(prepareCsvRow([
+        'Page Slug',
+        'Release ID',
+        'Show Date',
+        'Venue',
+        'Door Price',
+        'Attendance',
+        'Recorded by',
+        'Mastered by',
+        'Original Source',
+        'Tracks =>'
+      ]));
+
       let morePagesToScrape, tracks, releaseId;
       let i = 0;
       do {
         let releaseData = [];
+        releaseData.push(page.url().split('/').pop());
         releaseData.push(await extractReleaseId(page));
+        releaseData.push(await extractReleaseDetails('Show Date:', page));
+        releaseData.push(await extractReleaseDetails('Venue:', page));
+        releaseData.push(await extractReleaseDetails('Door Price:', page));
+        releaseData.push(await extractReleaseDetails('Attendance:', page));
+        releaseData.push(await extractReleaseDetails('Recorded by', page));
+        releaseData.push(await extractReleaseDetails('Mastered by', page));
+        releaseData.push(await extractReleaseDetails('Original Source:', page));
 
         tracks = await extractTracks(page);
         outputStream.write(prepareCsvRow(releaseData.concat(tracks)));
@@ -66,6 +96,30 @@ function escapeCsvTextDelimiter(string) {
   let regex = new RegExp(csvTextDelimiter);
   let replacement = `${csvTextDelimiter}${csvTextDelimiter}`;
   return string.replace(regex, replacement);
+}
+
+/**
+ * Extracts a release detail from the page.
+ *
+ * Release details are marked up in a definition list with no useful attributes
+ * for selection, so the definition term (i.e., the text within the tags) is all
+ * that can be used for retrieval.
+ *
+ * @param {String} label
+ *   The label of the "release detail" of interest, e.g., "Show Date:"
+ * @param {Page} page
+ *   @see https://github.com/GoogleChrome/puppeteer/blob/v1.10.0/docs/api.md#class-page
+ * @return {Promise<String>}
+ *   Resolves to the value of the "release detail" of interest, e.g., "1993-02-13"
+ */
+function extractReleaseDetails(label, page) {
+  return page.waitForSelector('dl.release-details').then(async elementHandle => {
+    const dd = (await elementHandle.$x(`//dt[text()="${label}"]/following-sibling::dd`))[0];
+
+    return (typeof dd === 'undefined') ? '' : await page.evaluate(el => {
+      return el.textContent.trim();
+    }, dd);
+  });
 }
 
 /**

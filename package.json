@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/GinkgoFJG/fugotcha#readme",
   "dependencies": {
+    "chalk": "^2.4.1",
     "commander": "^2.19.0",
     "puppeteer": "^1.10.0"
   },

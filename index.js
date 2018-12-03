@@ -6,6 +6,7 @@ const csvFieldSeparator = ',';
 const csvTextDelimiter = '"';
 
 // Includes
+const chalk = require('chalk');
 const fs = require('fs');
 const program = require('commander');
 const puppeteer = require('puppeteer');
@@ -13,18 +14,20 @@ const puppeteer = require('puppeteer');
 program
   .on('--help', function() {
     console.log('');
-    console.log("Fugotcha is a command-line utility for scraping data from the Fugazi Live Series on Dischord.com.");
+    console.log(chalk.bold('Fugotcha is a command-line utility for scraping data from the Fugazi Live Series on Dischord.com.'));
   })
   .option('-o --output <file>',
     'Required. The name of the file to which to output the scraped data.')
   .option('-p --page <slug>',
-    'Required. The slug of the page to scrape (the URL after "fugazi_live_series")')
+    'Required. The slug of the page to scrape (the URL after "fugazi_live_series").')
   .option('-c --count [count]',
-    'Optional. The number of pages to scrape (default: 1); 0 for infinity', 1)
+    'Optional. The number of pages to scrape (default: 1); 0 to scrape until the end of the dataset.', 1)
   .action(function () {
     const slug = validatePage(program.page);
     const pageLimit = validateCount(program.count);
     const outputStream = createOutputStream(program.output);
+
+    process.stdout.write('Fugetting data..');
 
     puppeteer.launch().then(async browser => {
       const page = await browser.newPage();
@@ -55,6 +58,14 @@ program
       let morePagesToScrape, tracks, releaseId;
       let i = 0;
       do {
+        // This is an "economy" progress indicator. A bona fide progress bar
+        // isn't worth the trouble (or would be misleading) because there are
+        // lots of cases where it's not easy to determine how many pages are
+        // left to scrape (e.g., --count is set to 50 but there are only 2 items
+        // left in the dataset, or --count is set to 0 (i.e., all pages) but
+        // that number is unknown).
+        process.stdout.write('.');
+
         let releaseData = [];
         releaseData.push(page.url().split('/').pop());
         releaseData.push(await extractReleaseId(page));
@@ -77,12 +88,13 @@ program
               match.click();
             });
           } catch (e) {
-            console.log('No "next" link; reached end of scrapable data.');
+            console.log(chalk.bold('No "next" link; reached end of scrapable data.'));
             morePagesToScrape = false;
           }
         }
       } while (morePagesToScrape);
 
+      console.log(`\nDone. Data saved in ${program.output}.`);
       outputStream.close();
       await browser.close();
     });
@@ -171,17 +183,17 @@ function extractTracks(page) {
  */
 function createOutputStream(filename) {
   if (typeof(filename) === 'undefined') {
-    console.error('Output is a required parameter.');
+    console.error(chalk.red('Output is a required parameter.'));
     process.exit(1);
   }
 
   return fs.createWriteStream(filename, {flags: 'wx'}).on('error', e => {
     switch (e.code) {
       case 'EEXIST':
-        console.error(`File ${filename} already exists; aborting so as not to overwrite.`);
+        console.error(chalk.red(`File ${filename} already exists; aborting so as not to overwrite.`));
         break;
       default:
-        console.error(e.message);
+        console.error(chalk.red(e.message));
     }
     process.exit(1);
   });
@@ -209,7 +221,7 @@ function prepareCsvRow(data = []) {
  */
 function validatePage(value) {
   if (typeof(value) === 'undefined') {
-    console.error('Page is a required parameter.');
+    console.error(chalk.red('Page is a required parameter.'));
     process.exit(1);
   }
 
@@ -228,6 +240,6 @@ function validateCount(value) {
   if (Number.isInteger(limit) && limit >= 0) {
     return limit;
   }
-  console.error('Count must be a non-negative integer.');
+  console.error(chalk.red('Count must be a non-negative integer.'));
   process.exit(1);
 }

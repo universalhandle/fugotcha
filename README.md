@@ -41,7 +41,7 @@ fugotcha -h
 ```
 
 ### Notes
-Data is dumped into a CSV-ish file specified by the `-f` option.
+Data is dumped into a CSV-ish file specified by the `-o` option.
 
 CSV-ish? [RFC 4180](https://tools.ietf.org/html/rfc4180) specifies that each
 line of a CSV "should contain the same number of fields throughout the file."
